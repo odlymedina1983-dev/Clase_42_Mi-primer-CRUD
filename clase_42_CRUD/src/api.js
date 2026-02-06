@@ -2,16 +2,35 @@ const API_url = 'https://jsonplaceholder.typicode.com/users';
 
 
 //get users
-const getUsers = async () => {
+export const getUsers = async () => {
   const users = await fetch(API_url)
     .then((response) => response.json());
     return users;    
 }
-
-//delete users
-
 //edit users -> addUser
+export const updateUser = async (user) => {
+  const url = user.id ? `${API_url}/${user.id}` : API_url;
+  const method = user.id ? "PUT" : "POST";
 
-//una condicion que me diga si estoy editando o no un usuario
+  const response = await fetch(url, {
+    method: method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(user),
+  });
 
-export { getUsers };
+  return await response.json();
+};
+//delete users
+export const deleteUser = async (id) => {
+  const responser = await fetch(`${API_url}/${id}`, {
+    method: "DELETE",
+  });
+
+  return await responser.json();
+};
+
+
+
+

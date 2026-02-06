@@ -1,4 +1,4 @@
-import { getUsers } from './api.js';
+import { getUsers, updateUser, deleteUser } from './api.js';
 
 //console.log("crud de clase_42");
 
@@ -74,24 +74,30 @@ const resetForm = () => {
   myForm.reset();
   editUser = null;
 }
- const saveUser = (name,email) => {
+const saveUser = async (name, email) => {
+  const payload = editUser
+    ? { id: editUser.id, name, email }   // // si editamos, mandamos id
+    : { name, email };                   // // si es nuevo, no mandamos id
+
+  const saved = await updateUser(payload); // // POST o PUT real a la API (según tenga id)
+
   if (editUser) {
-    editUser.name = name;
-    editUser.email = email;
-    } else {
-      usersArray.push({id : Date.now(), name, email});
-    }
+    editUser.name = saved.name;           // // actualizamos el objeto que estamos editando
+    editUser.email = saved.email;
+  } else {
+    usersArray.push(saved);               // // agregamos el nuevo usuario que devuelve la API
+  }
 
-    renderUsers();
+  renderUsers();                          // // repintamos lista
+  resetForm();                            // // limpiamos inputs y salimos de modo edición
+};
 
-    resetForm();
- }
-const addNewUser = (event) => {
+const addNewUser = async (event) => {
   event.preventDefault(); // evita recarga
   let name = inputName.value.trim();
   let email = inputEmail.value.trim();
   if (name && email) {
-    saveUser(name, email);
+    await saveUser(name, email); // // esperamos el POST/PUT antes de render
   } else {
     alert('No se han introducido correctamente los datos del usuario.');
   }
@@ -109,16 +115,24 @@ const editUserListHandler = (e) => {
   
   selectUserToEdit(user);// activamos modo edición (rellena inputs y guarda editUser)
 };
-const deleteUserFromList = (e) => {
+const deleteUserFromList = async (e) => {
+  const target = e.target; // // botón que recibió el click
+  if (!target.classList.contains("delete")) return;
 
+  const id = target.dataset.id; // // id desde data-id
+
+  await deleteUser(id);          // // DELETE real a la API
+
+  usersArray = usersArray.filter(
+    (user) => String(user.id) !== String(id)
+  ); // // borramos local para que se refleje en UI
+
+  renderUsers(); // // repintamos
 };
+
 myForm.addEventListener('submit', addNewUser);
-userList.addEventListener('click',(e) => {
-  if (e.target.classList.contains('edit')){
-    editUserListHandler();
-  }
-  if (e.target.classList.contains('delete')){
-    deleteUserFromList();
-  }
+userList.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("edit")) editUserListHandler(e);
+  if (e.target.classList.contains("delete")) await deleteUserFromList(e);
 });
 
